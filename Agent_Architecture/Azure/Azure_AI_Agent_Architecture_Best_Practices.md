@@ -7,7 +7,8 @@
 4. [Best Practices 상세](#best-practices-상세)
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
-7. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+7. [아키텍처 구성도](#아키텍처-구성도)
+8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -307,6 +308,165 @@ Azure의 AI Agent Architecture는 **Azure OpenAI Service**와 **Azure AI Studio*
 - **Terraform**: 멀티 클라우드 지원
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
+
+---
+
+## 아키텍처 구성도
+
+### 전체 아키텍처 개요
+
+다음은 Azure AI Agent Architecture의 전체 구성도를 나타냅니다:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        User[사용자]
+        WebApp[웹 애플리케이션]
+    end
+    
+    subgraph "API & Security Layer"
+        APIM[API Management<br/>게이트웨이]
+        AAD[Azure AD<br/>인증/권한]
+        ContentSafety[Azure AI Content Safety<br/>콘텐츠 필터링]
+        KeyVault[Key Vault<br/>시크릿 관리]
+    end
+    
+    subgraph "Orchestration Layer"
+        LogicApps[Logic Apps<br/>워크플로우 오케스트레이션]
+        FunctionsOrch[Azure Functions<br/>오케스트레이션]
+        ContainerApps[Container Apps<br/>컨테이너 실행]
+    end
+    
+    subgraph "AI/ML Layer"
+        OpenAI[Azure OpenAI Service<br/>GPT Models]
+        AIStudio[Azure AI Studio<br/>통합 플랫폼]
+        Assistants[Assistants API<br/>에이전트 런타임]
+        ML[Azure ML<br/>커스텀 모델]
+    end
+    
+    subgraph "Knowledge & Tools"
+        AISearch[Azure AI Search<br/>벡터 검색/RAG]
+        BlobStorage[Blob Storage<br/>문서 저장]
+        FunctionsTools[Azure Functions<br/>함수 호출/도구]
+        CustomAPI[Custom APIs<br/>외부 통합]
+    end
+    
+    subgraph "Storage & Memory"
+        CosmosDB[(Cosmos DB<br/>세션 상태)]
+        Redis[(Redis Cache<br/>캐싱)]
+        SQL[(SQL Database<br/>관계형 데이터)]
+    end
+    
+    subgraph "Observability"
+        Monitor[Azure Monitor<br/>모니터링]
+        AppInsights[Application Insights<br/>성능 추적]
+        LogAnalytics[Log Analytics<br/>로그 분석]
+    end
+    
+    User --> WebApp
+    WebApp --> APIM
+    APIM --> AAD
+    AAD --> ContentSafety
+    ContentSafety --> LogicApps
+    LogicApps --> FunctionsOrch
+    FunctionsOrch --> Assistants
+    Assistants --> OpenAI
+    Assistants --> AISearch
+    Assistants --> FunctionsTools
+    AISearch --> BlobStorage
+    FunctionsTools --> CustomAPI
+    Assistants --> CosmosDB
+    CosmosDB --> Redis
+    FunctionsTools --> SQL
+    LogicApps --> Monitor
+    Assistants --> AppInsights
+    FunctionsTools --> LogAnalytics
+    
+    style OpenAI fill:#0078D4
+    style Assistants fill:#0078D4
+    style AISearch fill:#0078D4
+    style ContentSafety fill:#0078D4
+    style LogicApps fill:#0078D4
+    style FunctionsOrch fill:#0078D4
+    style FunctionsTools fill:#0078D4
+```
+
+### 레이어별 상세 구성도
+
+```mermaid
+graph LR
+    subgraph "1. Foundation Models Layer"
+        FM1[GPT-4<br/>Azure OpenAI]
+        FM2[GPT-3.5<br/>Azure OpenAI]
+        FM3[Custom Model<br/>Azure ML]
+    end
+    
+    subgraph "2. Orchestration Layer"
+        O1[Assistants API<br/>에이전트 런타임]
+        O2[Logic Apps<br/>워크플로우]
+        O3[Azure Functions<br/>서버리스 로직]
+    end
+    
+    subgraph "3. Tools & Functions Layer"
+        T1[Azure Functions<br/>함수 호출]
+        T2[API Management<br/>외부 API]
+        T3[OpenAPI<br/>함수 정의]
+    end
+    
+    subgraph "4. Knowledge Base Layer"
+        K1[Azure AI Search<br/>벡터 검색]
+        K2[Blob Storage<br/>문서 저장]
+        K3[Cosmos DB<br/>메타데이터]
+    end
+    
+    subgraph "5. Memory & State Layer"
+        M1[Cosmos DB<br/>세션 상태]
+        M2[Redis Cache<br/>캐싱]
+        M3[Blob Storage<br/>장기 저장]
+    end
+    
+    FM1 --> O1
+    FM2 --> O1
+    FM3 --> O1
+    O1 --> O2
+    O2 --> O3
+    O3 --> T1
+    O3 --> T2
+    O1 --> K1
+    K1 --> K2
+    K2 --> K3
+    O1 --> M1
+    M1 --> M2
+    M2 --> M3
+```
+
+### 데이터 흐름도
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant APIM as API Management
+    participant AAD as Azure AD
+    participant Safety as Content Safety
+    participant Assistants as Assistants API
+    participant Search as Azure AI Search
+    participant Functions as Azure Functions
+    participant Cosmos as Cosmos DB
+    participant Insights as App Insights
+    
+    User->>APIM: 요청 전송
+    APIM->>AAD: 인증 확인
+    AAD->>Safety: 콘텐츠 검증
+    Safety->>Assistants: 검증된 요청
+    Assistants->>Search: 지식 검색 (RAG)
+    Search-->>Assistants: 검색 결과 + 인용
+    Assistants->>Functions: 함수 호출 결정
+    Functions-->>Assistants: 실행 결과
+    Assistants->>Cosmos: Thread/상태 저장
+    Assistants->>Insights: 로깅
+    Assistants-->>APIM: 응답 생성
+    APIM-->>User: 응답 반환
+```
 
 ---
 

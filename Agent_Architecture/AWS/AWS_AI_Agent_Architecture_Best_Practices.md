@@ -7,7 +7,8 @@
 4. [Best Practices 상세](#best-practices-상세)
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
-7. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+7. [아키텍처 구성도](#아키텍처-구성도)
+8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -291,6 +292,164 @@ Coordinator Agent
 - **Terraform**: 멀티 클라우드 지원
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
+
+---
+
+## 아키텍처 구성도
+
+### 전체 아키텍처 개요
+
+다음은 AWS AI Agent Architecture의 전체 구성도를 나타냅니다:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        User[사용자]
+        WebApp[웹 애플리케이션]
+    end
+    
+    subgraph "API Gateway & Security"
+        APIGW[API Gateway]
+        IAM[AWS IAM<br/>인증/권한]
+        Guardrails[Bedrock Guardrails<br/>콘텐츠 필터링]
+    end
+    
+    subgraph "Orchestration Layer"
+        LambdaOrch[Lambda<br/>오케스트레이션]
+        StepFunc[Step Functions<br/>워크플로우 관리]
+        EventBridge[EventBridge<br/>이벤트 라우팅]
+    end
+    
+    subgraph "AI/ML Layer"
+        Bedrock[Amazon Bedrock<br/>Foundation Models]
+        BedrockAgent[Bedrock Agents<br/>에이전트 런타임]
+        SageMaker[SageMaker<br/>커스텀 모델]
+    end
+    
+    subgraph "Knowledge & Tools"
+        KB[Bedrock Knowledge Bases<br/>RAG 지식 기반]
+        OpenSearch[OpenSearch<br/>벡터 검색]
+        ActionGroup[Action Groups<br/>도구 정의]
+        LambdaTools[Lambda Functions<br/>도구 실행]
+    end
+    
+    subgraph "Storage & Memory"
+        DynamoDB[(DynamoDB<br/>세션 상태)]
+        S3[(S3<br/>문서 저장)]
+        RDS[(RDS/Aurora<br/>관계형 데이터)]
+    end
+    
+    subgraph "Observability"
+        CloudWatch[CloudWatch<br/>로깅/모니터링]
+        XRay[X-Ray<br/>분산 추적]
+    end
+    
+    User --> WebApp
+    WebApp --> APIGW
+    APIGW --> IAM
+    IAM --> Guardrails
+    Guardrails --> LambdaOrch
+    LambdaOrch --> StepFunc
+    StepFunc --> BedrockAgent
+    BedrockAgent --> Bedrock
+    BedrockAgent --> KB
+    BedrockAgent --> ActionGroup
+    KB --> OpenSearch
+    KB --> S3
+    ActionGroup --> LambdaTools
+    BedrockAgent --> DynamoDB
+    LambdaTools --> RDS
+    LambdaOrch --> CloudWatch
+    BedrockAgent --> CloudWatch
+    LambdaTools --> XRay
+    
+    style Bedrock fill:#FF9900
+    style BedrockAgent fill:#FF9900
+    style KB fill:#FF9900
+    style Guardrails fill:#FF9900
+    style LambdaOrch fill:#FF9900
+    style StepFunc fill:#FF9900
+```
+
+### 레이어별 상세 구성도
+
+```mermaid
+graph LR
+    subgraph "1. Foundation Models Layer"
+        FM1[Claude<br/>Anthropic]
+        FM2[Llama<br/>Meta]
+        FM3[Titan<br/>AWS]
+        FM4[Custom Model<br/>SageMaker]
+    end
+    
+    subgraph "2. Orchestration Layer"
+        O1[Bedrock Agents<br/>에이전트 오케스트레이션]
+        O2[Lambda<br/>비즈니스 로직]
+        O3[Step Functions<br/>복잡한 워크플로우]
+    end
+    
+    subgraph "3. Tools & Actions Layer"
+        T1[Lambda Functions<br/>계산/변환]
+        T2[API Gateway<br/>외부 API]
+        T3[OpenAPI<br/>도구 정의]
+    end
+    
+    subgraph "4. Knowledge Base Layer"
+        K1[Bedrock KB<br/>벡터 임베딩]
+        K2[OpenSearch<br/>유사도 검색]
+        K3[S3<br/>원본 문서]
+    end
+    
+    subgraph "5. Memory & State Layer"
+        M1[DynamoDB<br/>세션 상태]
+        M2[S3<br/>장기 메모리]
+        M3[Vector DB<br/>컨텍스트 저장]
+    end
+    
+    FM1 --> O1
+    FM2 --> O1
+    FM3 --> O1
+    FM4 --> O1
+    O1 --> O2
+    O2 --> O3
+    O3 --> T1
+    O3 --> T2
+    O1 --> K1
+    K1 --> K2
+    K2 --> K3
+    O1 --> M1
+    M1 --> M2
+    M2 --> M3
+```
+
+### 데이터 흐름도
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant API as API Gateway
+    participant Guard as Guardrails
+    participant Orch as Lambda Orchestration
+    participant Agent as Bedrock Agent
+    participant KB as Knowledge Base
+    participant Tool as Action Group
+    participant DB as DynamoDB
+    participant Watch as CloudWatch
+    
+    User->>API: 요청 전송
+    API->>Guard: 콘텐츠 검증
+    Guard->>Orch: 검증된 요청
+    Orch->>Agent: 에이전트 호출
+    Agent->>KB: 지식 검색 (RAG)
+    KB-->>Agent: 검색 결과 + 인용
+    Agent->>Tool: 도구 선택 및 실행
+    Tool-->>Agent: 실행 결과
+    Agent->>DB: 세션 상태 저장
+    Agent->>Watch: 로깅
+    Agent-->>Orch: 응답 생성
+    Orch-->>API: 최종 응답
+    API-->>User: 응답 반환
+```
 
 ---
 

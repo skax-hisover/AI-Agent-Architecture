@@ -7,7 +7,8 @@
 4. [Best Practices 상세](#best-practices-상세)
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
-7. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+7. [아키텍처 구성도](#아키텍처-구성도)
+8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -320,6 +321,217 @@ Coordinator Agent
 - **Deployment Manager**: GCP 네이티브 IaC
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
+
+---
+
+## 아키텍처 구성도
+
+### 전체 아키텍처 개요
+
+다음은 GCP AI Agent Architecture의 전체 구성도를 나타냅니다:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        User[사용자]
+        WebApp[웹 애플리케이션]
+    end
+    
+    subgraph "API & Security Layer"
+        APIGW[API Gateway<br/>게이트웨이]
+        IAM[Cloud IAM<br/>인증/권한]
+        SecretMgr[Secret Manager<br/>시크릿 관리]
+        VPSC[VPC Service Controls<br/>네트워크 경계]
+    end
+    
+    subgraph "Agent Runtime Layer"
+        AgentEngine[Vertex AI Agent Engine<br/>관리형 런타임]
+        CloudRun[Cloud Run<br/>서버리스 컨테이너]
+        GKE[GKE<br/>컨테이너 오케스트레이션]
+        Workflows[Cloud Workflows<br/>워크플로우]
+    end
+    
+    subgraph "AI/ML Layer"
+        VertexAI[Vertex AI<br/>통합 ML 플랫폼]
+        Gemini[Gemini API<br/>LLM Models]
+        ADK[Agent Development Kit<br/>개발 프레임워크]
+    end
+    
+    subgraph "Knowledge & Tools"
+        VertexSearch[Vertex AI Search<br/>벡터 검색/RAG]
+        CloudStorage[Cloud Storage<br/>문서 저장]
+        CloudFunctions[Cloud Functions<br/>도구 실행]
+        MCP[Model Context Protocol<br/>표준화된 통합]
+    end
+    
+    subgraph "Memory & State"
+        Firestore[(Firestore<br/>세션/상태)]
+        Memorystore[(Memorystore Redis<br/>캐싱)]
+        MemoryBank[Memory Bank<br/>장기 메모리]
+        BigQuery[(BigQuery<br/>분석/저장)]
+    end
+    
+    subgraph "Observability"
+        Logging[Cloud Logging<br/>로깅]
+        Monitoring[Cloud Monitoring<br/>모니터링]
+        Trace[Cloud Trace<br/>분산 추적]
+    end
+    
+    User --> WebApp
+    WebApp --> APIGW
+    APIGW --> IAM
+    IAM --> VPSC
+    VPSC --> AgentEngine
+    AgentEngine --> VertexAI
+    VertexAI --> Gemini
+    AgentEngine --> VertexSearch
+    AgentEngine --> CloudFunctions
+    VertexSearch --> CloudStorage
+    CloudFunctions --> MCP
+    AgentEngine --> Firestore
+    Firestore --> Memorystore
+    Memorystore --> MemoryBank
+    AgentEngine --> BigQuery
+    AgentEngine --> Logging
+    CloudFunctions --> Monitoring
+    AgentEngine --> Trace
+    
+    style VertexAI fill:#4285F4
+    style AgentEngine fill:#4285F4
+    style VertexSearch fill:#4285F4
+    style Gemini fill:#4285F4
+    style CloudRun fill:#4285F4
+    style CloudFunctions fill:#4285F4
+```
+
+### 멀티 에이전트 Coordinator 패턴
+
+```mermaid
+graph TB
+    subgraph "Coordinator Agent"
+        Coordinator[Coordinator Agent<br/>작업 조정 및 위임]
+    end
+    
+    subgraph "Specialized Agents"
+        SearchAgent[Search Agent<br/>지식 검색]
+        AnalysisAgent[Analysis Agent<br/>데이터 분석]
+        ExecutionAgent[Execution Agent<br/>작업 실행]
+        ValidationAgent[Validation Agent<br/>결과 검증]
+    end
+    
+    subgraph "Knowledge & Data Sources"
+        VertexSearch[Vertex AI Search<br/>벡터 검색]
+        BigQuery[BigQuery<br/>데이터 분석]
+        CloudFunctions[Cloud Functions<br/>도구 실행]
+        ContentSafety[Content Safety<br/>검증]
+    end
+    
+    subgraph "Shared Memory"
+        Firestore[(Firestore<br/>공유 상태)]
+        MemoryBank[Memory Bank<br/>장기 메모리]
+    end
+    
+    Coordinator -->|A2A Protocol| SearchAgent
+    Coordinator -->|A2A Protocol| AnalysisAgent
+    Coordinator -->|A2A Protocol| ExecutionAgent
+    Coordinator -->|A2A Protocol| ValidationAgent
+    
+    SearchAgent --> VertexSearch
+    AnalysisAgent --> BigQuery
+    ExecutionAgent --> CloudFunctions
+    ValidationAgent --> ContentSafety
+    
+    Coordinator --> Firestore
+    SearchAgent --> MemoryBank
+    AnalysisAgent --> MemoryBank
+    ExecutionAgent --> MemoryBank
+    ValidationAgent --> MemoryBank
+    
+    style Coordinator fill:#EA4335
+    style SearchAgent fill:#34A853
+    style AnalysisAgent fill:#34A853
+    style ExecutionAgent fill:#34A853
+    style ValidationAgent fill:#34A853
+```
+
+### 레이어별 상세 구성도
+
+```mermaid
+graph LR
+    subgraph "1. Foundation Models Layer"
+        FM1[Gemini Pro<br/>Google]
+        FM2[Gemini Ultra<br/>Google]
+        FM3[Custom Model<br/>Vertex AI]
+    end
+    
+    subgraph "2. Agent Runtime Layer"
+        R1[Agent Engine<br/>관리형 런타임]
+        R2[Cloud Run<br/>서버리스]
+        R3[GKE<br/>컨테이너]
+    end
+    
+    subgraph "3. Tools & Actions Layer"
+        T1[Cloud Functions<br/>서버리스 함수]
+        T2[Cloud Run<br/>컨테이너 함수]
+        T3[MCP<br/>표준 프로토콜]
+    end
+    
+    subgraph "4. Knowledge Base Layer"
+        K1[Vertex AI Search<br/>벡터 검색]
+        K2[Cloud Storage<br/>문서 저장]
+        K3[Firestore<br/>메타데이터]
+    end
+    
+    subgraph "5. Memory & State Layer"
+        M1[Firestore<br/>세션 상태]
+        M2[Memorystore<br/>캐싱]
+        M3[Memory Bank<br/>장기 메모리]
+    end
+    
+    FM1 --> R1
+    FM2 --> R1
+    FM3 --> R1
+    R1 --> R2
+    R2 --> R3
+    R3 --> T1
+    R3 --> T2
+    T2 --> T3
+    R1 --> K1
+    K1 --> K2
+    K2 --> K3
+    R1 --> M1
+    M1 --> M2
+    M2 --> M3
+```
+
+### 데이터 흐름도 (Coordinator 패턴)
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant API as API Gateway
+    participant IAM as Cloud IAM
+    participant Coordinator as Coordinator Agent
+    participant Search as Search Agent
+    participant Analysis as Analysis Agent
+    participant Execution as Execution Agent
+    participant Firestore as Firestore
+    participant Logging as Cloud Logging
+    
+    User->>API: 요청 전송
+    API->>IAM: 인증 확인
+    IAM->>Coordinator: 요청 전달
+    Coordinator->>Search: 지식 검색 위임 (A2A)
+    Search-->>Coordinator: 검색 결과
+    Coordinator->>Analysis: 데이터 분석 위임 (A2A)
+    Analysis-->>Coordinator: 분석 결과
+    Coordinator->>Execution: 작업 실행 위임 (A2A)
+    Execution-->>Coordinator: 실행 결과
+    Coordinator->>Firestore: 상태 저장
+    Coordinator->>Logging: 로깅
+    Coordinator-->>API: 통합 응답
+    API-->>User: 응답 반환
+```
 
 ---
 
