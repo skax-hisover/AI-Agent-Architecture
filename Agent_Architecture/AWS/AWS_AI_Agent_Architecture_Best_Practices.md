@@ -363,12 +363,12 @@ graph TB
     BedrockAgent --> CloudWatch
     LambdaTools --> XRay
     
-    style Bedrock fill:#FF9900
-    style BedrockAgent fill:#FF9900
-    style KB fill:#FF9900
-    style Guardrails fill:#FF9900
-    style LambdaOrch fill:#FF9900
-    style StepFunc fill:#FF9900
+    style Bedrock fill:#FFD699
+    style BedrockAgent fill:#FFD699
+    style KB fill:#FFD699
+    style Guardrails fill:#FFD699
+    style LambdaOrch fill:#FFD699
+    style StepFunc fill:#FFD699
 ```
 
 ### 레이어별 상세 구성도

@@ -382,13 +382,13 @@ graph TB
     Assistants --> AppInsights
     FunctionsTools --> LogAnalytics
     
-    style OpenAI fill:#0078D4
-    style Assistants fill:#0078D4
-    style AISearch fill:#0078D4
-    style ContentSafety fill:#0078D4
-    style LogicApps fill:#0078D4
-    style FunctionsOrch fill:#0078D4
-    style FunctionsTools fill:#0078D4
+    style OpenAI fill:#B3D9FF
+    style Assistants fill:#B3D9FF
+    style AISearch fill:#B3D9FF
+    style ContentSafety fill:#B3D9FF
+    style LogicApps fill:#B3D9FF
+    style FunctionsOrch fill:#B3D9FF
+    style FunctionsTools fill:#B3D9FF
 ```
 
 ### 레이어별 상세 구성도

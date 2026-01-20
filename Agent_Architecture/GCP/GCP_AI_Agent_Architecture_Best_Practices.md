@@ -396,12 +396,12 @@ graph TB
     CloudFunctions --> Monitoring
     AgentEngine --> Trace
     
-    style VertexAI fill:#4285F4
-    style AgentEngine fill:#4285F4
-    style VertexSearch fill:#4285F4
-    style Gemini fill:#4285F4
-    style CloudRun fill:#4285F4
-    style CloudFunctions fill:#4285F4
+    style VertexAI fill:#B3D9FF
+    style AgentEngine fill:#B3D9FF
+    style VertexSearch fill:#B3D9FF
+    style Gemini fill:#B3D9FF
+    style CloudRun fill:#B3D9FF
+    style CloudFunctions fill:#B3D9FF
 ```
 
 ### 멀티 에이전트 Coordinator 패턴
@@ -447,11 +447,11 @@ graph TB
     ExecutionAgent --> MemoryBank
     ValidationAgent --> MemoryBank
     
-    style Coordinator fill:#EA4335
-    style SearchAgent fill:#34A853
-    style AnalysisAgent fill:#34A853
-    style ExecutionAgent fill:#34A853
-    style ValidationAgent fill:#34A853
+    style Coordinator fill:#FFB3BA
+    style SearchAgent fill:#C8E6C9
+    style AnalysisAgent fill:#C8E6C9
+    style ExecutionAgent fill:#C8E6C9
+    style ValidationAgent fill:#C8E6C9
 ```
 
 ### 레이어별 상세 구성도
