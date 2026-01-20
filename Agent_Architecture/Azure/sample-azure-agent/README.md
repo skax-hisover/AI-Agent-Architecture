@@ -128,7 +128,4 @@ sample-azure-agent/
 - [Azure AI Search 문서](https://learn.microsoft.com/azure/search/)
 - [Azure Functions Best Practices](https://learn.microsoft.com/azure/azure-functions/functions-best-practices)
 
-## 📄 라이선스
-
-이 샘플 코드는 교육 및 데모 목적으로 제공됩니다.
 

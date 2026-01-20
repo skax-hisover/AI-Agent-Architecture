@@ -126,6 +126,3 @@ sample-aws-agent/
 - [Spring Boot 공식 문서](https://spring.io/projects/spring-boot)
 - [React 공식 문서](https://react.dev/)
 
-## 📄 라이선스
-
-이 샘플 코드는 교육 및 데모 목적으로 제공됩니다.

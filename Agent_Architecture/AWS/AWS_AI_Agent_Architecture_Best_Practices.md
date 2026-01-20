@@ -377,7 +377,3 @@ Shared Memory (DynamoDB / S3)
 - [Amazon Bedrock Best Practices](https://aws.amazon.com/blogs/machine-learning/best-practices-for-building-robust-generative-ai-applications-with-amazon-bedrock-agents-part-1/)
 - [AWS Security Reference Architecture - Generative AI](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-generative-ai/gen-ai-agents.html)
 
----
-
-**문서 버전**: 1.0  
-**최종 업데이트**: 2024년

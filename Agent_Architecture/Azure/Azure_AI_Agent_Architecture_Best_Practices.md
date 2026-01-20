@@ -394,7 +394,3 @@ Shared Memory (Cosmos DB / Redis)
 - [Azure Functions Best Practices](https://learn.microsoft.com/azure/azure-functions/functions-best-practices)
 - [Azure AI Content Safety](https://learn.microsoft.com/azure/ai-services/content-safety/)
 
----
-
-**문서 버전**: 1.0  
-**최종 업데이트**: 2024년

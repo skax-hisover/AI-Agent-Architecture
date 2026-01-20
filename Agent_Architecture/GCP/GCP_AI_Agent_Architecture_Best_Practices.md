@@ -422,7 +422,3 @@ Agent Engine
 - [Choose Design Pattern for Agentic AI System](https://cloud.google.com/architecture/choose-design-pattern-agentic-ai-system)
 - [Building Scalable AI Agents: Design Patterns](https://cloud.google.com/blog/topics/partners/building-scalable-ai-agents-design-patterns-with-agent-engine-on-google-cloud)
 
----
-
-**문서 버전**: 1.0  
-**최종 업데이트**: 2024년

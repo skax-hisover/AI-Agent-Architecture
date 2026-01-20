@@ -143,13 +143,6 @@ AI Agent Architecture는 단순한 대화형 챗봇을 넘어서, **자율적인
 - [Azure AI Agent Architecture Best Practices](./Agent_Architecture/Azure/Azure_AI_Agent_Architecture_Best_Practices.md)
 - [GCP AI Agent Architecture Best Practices](./Agent_Architecture/GCP/GCP_AI_Agent_Architecture_Best_Practices.md)
 
----
-
-## 📝 문서 정보
-
-- **문서 버전**: 1.0
-- **최종 업데이트**: 2024년
-- **라이선스**: 이 문서는 참고용으로 제공됩니다.
 
 ---
 
