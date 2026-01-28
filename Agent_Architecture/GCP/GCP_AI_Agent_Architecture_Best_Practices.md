@@ -996,8 +996,8 @@ Agent Engine
 
 ## 참고 자료
 
-- [Vertex AI Agent Engine Documentation](https://cloud.google.com/agent-builder/agent-engine)
-- [Agent Development Kit (ADK) Documentation](https://cloud.google.com/agent-builder/docs)
+- [Vertex AI Agent Engine Documentation](https://cloud.google.com/vertex-ai/docs)
+- [Agent Development Kit (ADK) Documentation](https://cloud.google.com/architecture/multiagent-ai-system)
 - [Multi-Agent AI System Architecture](https://cloud.google.com/architecture/multiagent-ai-system)
 - [Choose Agentic AI Architecture Components](https://cloud.google.com/architecture/choose-agentic-ai-architecture-components)
 - [Choose Design Pattern for Agentic AI System](https://cloud.google.com/architecture/choose-design-pattern-agentic-ai-system)
