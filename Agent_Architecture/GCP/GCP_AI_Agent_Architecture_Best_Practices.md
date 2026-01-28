@@ -678,7 +678,9 @@ graph TB
     style SecretMgr fill:#E8F5E9
 ```
 
-### GCP AI Landing Zone 아키텍처
+---
+
+## GCP AI Landing Zone 아키텍처
 
 다음은 GCP에서 AI Agent를 위한 Landing Zone 아키텍처입니다:
 
@@ -823,7 +825,9 @@ graph TB
     style Perimeter fill:#E8F5E9
 ```
 
-### 배포 파이프라인 상세 아키텍처
+---
+
+## 배포 파이프라인 아키텍처
 
 ```mermaid
 graph LR
