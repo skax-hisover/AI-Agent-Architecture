@@ -997,29 +997,18 @@ Agent Engine
 ## 참고 자료
 
 - **GCP Landing Zone 및 플랫폼 아키텍처**
-  - Google Cloud Landing Zone 설계 가이드 (공식)  
-    `https://docs.cloud.google.com/architecture/landing-zones`  
-  - GCP Landing Zone 전체 가이드 (개념 + 다이어그램)  
-    `https://mycloudwiki.com/cloud-landing-zone/google-cloud/complete-guide-on-gcp-landing-zones/3/`  
-  - Google Cloud Architecture Center (도메인별 레퍼런스 아키텍처 모음)  
-    `https://docs.cloud.google.com/architecture`
+  - [Google Cloud Landing Zone 설계 가이드 (공식)](https://docs.cloud.google.com/architecture/landing-zones)  
+  - [GCP Landing Zone 전체 가이드 (개념 + 다이어그램)](https://mycloudwiki.com/cloud-landing-zone/google-cloud/complete-guide-on-gcp-landing-zones/3/)  
+  - [Google Cloud Architecture Center (도메인별 레퍼런스 아키텍처 모음)](https://docs.cloud.google.com/architecture)
 
 - **GCP AI Agent / Agentic AI 아키텍처**
-  - Vertex AI Agent Engine / Vertex AI 개요  
-    `https://cloud.google.com/vertex-ai/docs`  
-  - Vertex AI Agent Builder 제품 소개  
-    `https://cloud.google.com/products/agent-builder`  
-  - Vertex AI Agent Builder 개요 및 워크플로(Overview + Diagram)  
-    `https://docs.cloud.google.com/agent-builder/overview`  
-  - Multi-Agent AI System Reference Architecture  
-    `https://cloud.google.com/architecture/multiagent-ai-system`  
-  - Agentic AI 컴포넌트 선택 가이드  
-    `https://cloud.google.com/architecture/choose-agentic-ai-architecture-components`  
-  - Agentic AI 디자인 패턴 선택 가이드  
-    `https://cloud.google.com/architecture/choose-agentic-ai-architecture-design-pattern`  
-  - Building Scalable AI Agents: Design Patterns (파트너 블로그)  
-    `https://cloud.google.com/blog/topics/partners/building-scalable-ai-agents-design-patterns-with-agent-engine-on-google-cloud`  
-  - Codelab: Vertex AI로 AI Agent 빌드/배포 예제  
-    `https://codelabs.developers.google.com/devsite/codelabs/building-ai-agents-vertexai`
+  - [Vertex AI Agent Engine / Vertex AI 개요](https://cloud.google.com/vertex-ai/docs)  
+  - [Vertex AI Agent Builder 제품 소개](https://cloud.google.com/products/agent-builder)  
+  - [Vertex AI Agent Builder 개요 및 워크플로 (Overview + Diagram)](https://docs.cloud.google.com/agent-builder/overview)  
+  - [Multi-Agent AI System Reference Architecture](https://cloud.google.com/architecture/multiagent-ai-system)  
+  - [Agentic AI 컴포넌트 선택 가이드](https://cloud.google.com/architecture/choose-agentic-ai-architecture-components)  
+  - [Agentic AI 디자인 패턴 선택 가이드](https://cloud.google.com/architecture/choose-agentic-ai-architecture-design-pattern)  
+  - [Building Scalable AI Agents: Design Patterns (파트너 블로그)](https://cloud.google.com/blog/topics/partners/building-scalable-ai-agents-design-patterns-with-agent-engine-on-google-cloud)  
+  - [Codelab: Vertex AI로 AI Agent 빌드/배포 예제](https://codelabs.developers.google.com/devsite/codelabs/building-ai-agents-vertexai)
 
 
