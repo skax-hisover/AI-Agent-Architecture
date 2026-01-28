@@ -535,6 +535,371 @@ sequenceDiagram
 
 ---
 
+## Production 배포 아키텍처
+
+### GCP AI Agent Production 배포 아키텍처
+
+다음은 GCP에서 AI Agent를 Production 환경에 배포하기 위한 전체 아키텍처입니다:
+
+```mermaid
+graph TB
+    subgraph "CI/CD Pipeline"
+        Git[Git Repository<br/>소스 코드 관리]
+        CloudBuild[Cloud Build<br/>빌드 및 배포]
+        ArtifactReg[Artifact Registry<br/>컨테이너 이미지]
+        CloudSource[Cloud Source Repositories<br/>코드 저장소]
+    end
+    
+    subgraph "Development Environment"
+        DevAgent[Agent Engine Dev<br/>개발 환경]
+        DevKB[Vertex AI Search Dev<br/>개발 KB]
+        DevStorage[Cloud Storage Dev<br/>개발 데이터]
+    end
+    
+    subgraph "Staging Environment"
+        StagingAgent[Agent Engine Staging<br/>스테이징 환경]
+        StagingKB[Vertex AI Search Staging<br/>스테이징 KB]
+        StagingStorage[Cloud Storage Staging<br/>스테이징 데이터]
+    end
+    
+    subgraph "Production Environment"
+        subgraph "API Layer"
+            APIGW[API Gateway<br/>게이트웨이]
+            LoadBalancer[Cloud Load Balancing<br/>로드 밸런서]
+        end
+        
+        subgraph "Security Layer"
+            IAM[Cloud IAM<br/>인증/권한]
+            SecretMgr[Secret Manager<br/>시크릿 관리]
+            VPSC[VPC Service Controls<br/>네트워크 경계]
+            WAF[Cloud Armor<br/>WAF 보안]
+        end
+        
+        subgraph "Agent Runtime"
+            AgentEngine[Vertex AI Agent Engine<br/>프로덕션 런타임]
+            CloudRun[Cloud Run<br/>서버리스 컨테이너]
+            GKE[GKE Cluster<br/>컨테이너 오케스트레이션]
+        end
+        
+        subgraph "AI/ML Services"
+            VertexAI[Vertex AI<br/>ML 플랫폼]
+            Gemini[Gemini API<br/>LLM Models]
+            VertexSearch[Vertex AI Search<br/>벡터 검색/RAG]
+        end
+        
+        subgraph "Data Layer"
+            Firestore[(Firestore<br/>세션/상태)]
+            BigQuery[(BigQuery<br/>분석/저장)]
+            CloudStorage[(Cloud Storage<br/>문서 저장)]
+            Memorystore[(Memorystore Redis<br/>캐싱)]
+        end
+        
+        subgraph "Tools & Functions"
+            CloudFunctions[Cloud Functions<br/>도구 실행]
+            CloudWorkflows[Cloud Workflows<br/>워크플로우]
+        end
+    end
+    
+    subgraph "Observability & Monitoring"
+        CloudLogging[Cloud Logging<br/>중앙 집중식 로깅]
+        CloudMonitoring[Cloud Monitoring<br/>메트릭 및 알림]
+        CloudTrace[Cloud Trace<br/>분산 추적]
+        ErrorReporting[Error Reporting<br/>에러 추적]
+        LogAnalytics[Log Analytics<br/>로그 분석]
+    end
+    
+    subgraph "Governance & Compliance"
+        CloudAsset[Cloud Asset Inventory<br/>리소스 관리]
+        CloudPolicy[Cloud Policy<br/>정책 관리]
+        SecurityCommand[Security Command Center<br/>보안 관리]
+    end
+    
+    Git --> CloudBuild
+    CloudSource --> CloudBuild
+    CloudBuild --> ArtifactReg
+    ArtifactReg --> DevAgent
+    ArtifactReg --> StagingAgent
+    ArtifactReg --> CloudRun
+    ArtifactReg --> GKE
+    
+    DevAgent --> DevKB
+    DevKB --> DevStorage
+    StagingAgent --> StagingKB
+    StagingKB --> StagingStorage
+    
+    APIGW --> LoadBalancer
+    LoadBalancer --> WAF
+    WAF --> IAM
+    IAM --> VPSC
+    VPSC --> AgentEngine
+    VPSC --> CloudRun
+    VPSC --> GKE
+    
+    AgentEngine --> VertexAI
+    VertexAI --> Gemini
+    AgentEngine --> VertexSearch
+    AgentEngine --> CloudFunctions
+    VertexSearch --> CloudStorage
+    CloudFunctions --> CloudWorkflows
+    
+    AgentEngine --> Firestore
+    AgentEngine --> BigQuery
+    Firestore --> Memorystore
+    VertexSearch --> CloudStorage
+    
+    AgentEngine --> CloudLogging
+    CloudRun --> CloudLogging
+    CloudFunctions --> CloudLogging
+    CloudLogging --> LogAnalytics
+    
+    AgentEngine --> CloudMonitoring
+    CloudRun --> CloudMonitoring
+    CloudFunctions --> CloudMonitoring
+    
+    AgentEngine --> CloudTrace
+    CloudRun --> CloudTrace
+    
+    CloudRun --> ErrorReporting
+    CloudFunctions --> ErrorReporting
+    
+    VPSC --> SecurityCommand
+    IAM --> CloudPolicy
+    AgentEngine --> CloudAsset
+    
+    style AgentEngine fill:#B3D9FF
+    style VertexAI fill:#B3D9FF
+    style VertexSearch fill:#B3D9FF
+    style Gemini fill:#B3D9FF
+    style CloudRun fill:#B3D9FF
+    style CloudFunctions fill:#B3D9FF
+    style APIGW fill:#E8F5E9
+    style IAM fill:#E8F5E9
+    style VPSC fill:#E8F5E9
+    style SecretMgr fill:#E8F5E9
+```
+
+### GCP AI Landing Zone 아키텍처
+
+다음은 GCP에서 AI Agent를 위한 Landing Zone 아키텍처입니다:
+
+```mermaid
+graph TB
+    subgraph "Organization Level"
+        Org[GCP Organization<br/>조직 단위]
+        Folders[Folders<br/>리소스 조직]
+        Policies[Organization Policies<br/>조직 정책]
+    end
+    
+    subgraph "Network Architecture"
+        VPC[VPC Network<br/>가상 네트워크]
+        Subnet[Subnets<br/>서브넷]
+        PSC[Private Service Connect<br/>프라이빗 연결]
+        VPN[Cloud VPN<br/>VPN 연결]
+        Interconnect[Cloud Interconnect<br/>전용 연결]
+    end
+    
+    subgraph "Security & Identity"
+        IAM[Cloud IAM<br/>인증/권한]
+        ServiceAccounts[Service Accounts<br/>서비스 계정]
+        WorkloadIdentity[Workload Identity<br/>워크로드 인증]
+        SecretMgr[Secret Manager<br/>시크릿 관리]
+        KMS[Cloud KMS<br/>키 관리]
+    end
+    
+    subgraph "VPC Service Controls"
+        VPSC[VPC Service Controls<br/>네트워크 경계]
+        Perimeter[Service Perimeter<br/>서비스 경계]
+        AccessLevel[Access Context Manager<br/>접근 레벨]
+    end
+    
+    subgraph "AI Agent Projects"
+        subgraph "Shared Services Project"
+            SharedVPC[Shared VPC<br/>공유 VPC]
+            DNS[Cloud DNS<br/>DNS 관리]
+            NAT[Cloud NAT<br/>NAT 게이트웨이]
+        end
+        
+        subgraph "AI Platform Project"
+            VertexAI[Vertex AI<br/>ML 플랫폼]
+            AgentEngine[Agent Engine<br/>에이전트 런타임]
+            VertexSearch[Vertex AI Search<br/>벡터 검색]
+        end
+        
+        subgraph "Data Project"
+            BigQuery[BigQuery<br/>데이터 웨어하우스]
+            CloudStorage[Cloud Storage<br/>객체 저장소]
+            Firestore[Firestore<br/>NoSQL DB]
+        end
+        
+        subgraph "Compute Project"
+            CloudRun[Cloud Run<br/>서버리스]
+            GKE[GKE<br/>컨테이너]
+            CloudFunctions[Cloud Functions<br/>서버리스 함수]
+        end
+        
+        subgraph "Security Project"
+            SecurityCommand[Security Command Center<br/>보안 관리]
+            CloudArmor[Cloud Armor<br/>WAF/DDoS]
+            CloudPolicy[Cloud Policy<br/>정책 관리]
+        end
+        
+        subgraph "Observability Project"
+            CloudLogging[Cloud Logging<br/>로깅]
+            CloudMonitoring[Cloud Monitoring<br/>모니터링]
+            CloudTrace[Cloud Trace<br/>추적]
+        end
+    end
+    
+    subgraph "External Connections"
+        Internet[Internet<br/>인터넷]
+        OnPrem[On-Premises<br/>온프레미스]
+        Partners[Partner Networks<br/>파트너 네트워크]
+    end
+    
+    Org --> Folders
+    Folders --> Policies
+    Policies --> VPSC
+    
+    VPC --> Subnet
+    VPC --> PSC
+    VPC --> VPN
+    VPC --> Interconnect
+    
+    IAM --> ServiceAccounts
+    ServiceAccounts --> WorkloadIdentity
+    SecretMgr --> KMS
+    
+    VPSC --> Perimeter
+    Perimeter --> AccessLevel
+    
+    SharedVPC --> DNS
+    SharedVPC --> NAT
+    
+    Folders --> SharedVPC
+    Folders --> VertexAI
+    Folders --> BigQuery
+    Folders --> CloudRun
+    Folders --> SecurityCommand
+    Folders --> CloudLogging
+    
+    VertexAI --> AgentEngine
+    VertexAI --> VertexSearch
+    
+    AgentEngine --> CloudRun
+    AgentEngine --> GKE
+    AgentEngine --> CloudFunctions
+    
+    AgentEngine --> BigQuery
+    AgentEngine --> CloudStorage
+    AgentEngine --> Firestore
+    
+    Perimeter --> VertexAI
+    Perimeter --> BigQuery
+    Perimeter --> CloudRun
+    Perimeter --> CloudStorage
+    
+    PSC --> Internet
+    VPN --> OnPrem
+    Interconnect --> Partners
+    
+    CloudArmor --> Internet
+    SecurityCommand --> VertexAI
+    SecurityCommand --> CloudRun
+    SecurityCommand --> BigQuery
+    
+    CloudLogging --> VertexAI
+    CloudLogging --> CloudRun
+    CloudMonitoring --> VertexAI
+    CloudMonitoring --> CloudRun
+    
+    style VertexAI fill:#B3D9FF
+    style AgentEngine fill:#B3D9FF
+    style VertexSearch fill:#B3D9FF
+    style CloudRun fill:#B3D9FF
+    style CloudFunctions fill:#B3D9FF
+    style VPSC fill:#E8F5E9
+    style IAM fill:#E8F5E9
+    style SecurityCommand fill:#E8F5E9
+    style Perimeter fill:#E8F5E9
+```
+
+### 배포 파이프라인 상세 아키텍처
+
+```mermaid
+graph LR
+    subgraph "Source Control"
+        Git[Git Repository]
+        CloudSource[Cloud Source Repositories]
+    end
+    
+    subgraph "Build & Test"
+        CloudBuild[Cloud Build<br/>CI/CD]
+        UnitTest[Unit Tests<br/>단위 테스트]
+        IntegrationTest[Integration Tests<br/>통합 테스트]
+        EvalTest[Evaluation Tests<br/>평가 테스트]
+    end
+    
+    subgraph "Artifact Management"
+        ArtifactReg[Artifact Registry<br/>컨테이너 이미지]
+        GCSArtifacts[Cloud Storage<br/>배포 아티팩트]
+    end
+    
+    subgraph "Deployment Environments"
+        Dev[Development<br/>개발 환경]
+        Staging[Staging<br/>스테이징 환경]
+        Prod[Production<br/>프로덕션 환경]
+    end
+    
+    subgraph "Production Components"
+        AgentEngine[Agent Engine]
+        CloudRun[Cloud Run]
+        GKE[GKE]
+        VertexSearch[Vertex AI Search]
+    end
+    
+    subgraph "Monitoring & Rollback"
+        Monitoring[Cloud Monitoring]
+        Logging[Cloud Logging]
+        Rollback[Auto Rollback]
+    end
+    
+    Git --> CloudSource
+    CloudSource --> CloudBuild
+    CloudBuild --> UnitTest
+    UnitTest --> IntegrationTest
+    IntegrationTest --> EvalTest
+    EvalTest --> ArtifactReg
+    EvalTest --> GCSArtifacts
+    
+    ArtifactReg --> Dev
+    ArtifactReg --> Staging
+    ArtifactReg --> Prod
+    
+    Dev --> Staging
+    Staging --> Prod
+    
+    Prod --> AgentEngine
+    Prod --> CloudRun
+    Prod --> GKE
+    Prod --> VertexSearch
+    
+    AgentEngine --> Monitoring
+    CloudRun --> Monitoring
+    GKE --> Monitoring
+    VertexSearch --> Monitoring
+    
+    Monitoring --> Logging
+    Monitoring --> Rollback
+    Rollback --> Prod
+    
+    style CloudBuild fill:#B3D9FF
+    style AgentEngine fill:#B3D9FF
+    style CloudRun fill:#B3D9FF
+    style VertexSearch fill:#B3D9FF
+```
+
+---
+
 ## 참고 아키텍처 패턴
 
 ### 1. Single-Agent 패턴
