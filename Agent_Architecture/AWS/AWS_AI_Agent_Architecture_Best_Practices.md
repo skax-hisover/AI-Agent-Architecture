@@ -206,6 +206,71 @@ Coordinator Agent
 - **비동기 처리**: 장시간 작업은 비동기로 처리
 - **함수 호출 최소화**: 불필요한 도구 호출 감소
 
+### 7. Application ↔ Agent 공유 DB + Vector Store 구축
+
+#### 아키텍처 패턴
+
+**패턴 1: PostgreSQL + pgvector 통합 패턴**
+- **구성**: RDS PostgreSQL + pgvector Extension
+- **특징**: 
+  - Application 데이터와 벡터 임베딩을 동일 DB에 저장
+  - 관계형 데이터와 벡터 검색을 한 곳에서 처리
+  - 트랜잭션 일관성 보장
+- **적합한 경우**: 
+  - 소규모~중규모 데이터
+  - 관계형 데이터와 벡터 데이터가 밀접하게 연관
+  - 운영 단순화가 우선
+- **구현 방법**:
+  - RDS PostgreSQL 인스턴스 생성
+  - pgvector extension 활성화
+  - 벡터 컬럼 추가 및 인덱스 생성
+  - Application과 Agent가 동일 DB 접근
+
+**패턴 2: Bedrock Knowledge Base + OpenSearch 패턴**
+- **구성**: Bedrock Knowledge Bases + OpenSearch Serverless
+- **특징**:
+  - 관리형 Vector Store 제공
+  - S3에 원본 문서 저장, OpenSearch에 벡터 인덱스
+  - Application과 Agent가 동일 Knowledge Base 공유
+- **적합한 경우**:
+  - 대규모 문서 기반 RAG
+  - 관리형 서비스 선호
+  - 자동 인덱싱 및 동기화 필요
+- **구현 방법**:
+  - Bedrock Knowledge Base 생성
+  - S3 데이터 소스 연결
+  - OpenSearch Serverless를 Vector Store로 설정
+  - Application과 Agent가 Knowledge Base API 공유
+
+**패턴 3: 하이브리드 패턴 (RDS + OpenSearch + DynamoDB)**
+- **구성**: 
+  - RDS: Application 관계형 데이터
+  - OpenSearch: Vector Store
+  - DynamoDB: 세션 상태 및 메타데이터
+- **특징**:
+  - 각 구성 요소별 최적화
+  - 독립적 스케일링
+  - 데이터 동기화 필요
+- **적합한 경우**:
+  - 대규모 데이터
+  - 고성능 벡터 검색 필요
+  - 각 구성 요소별 독립적 관리 필요
+
+#### 데이터 동기화 전략
+- **CDC (Change Data Capture)**: DMS를 통한 실시간 동기화
+- **이벤트 기반**: EventBridge를 통한 비동기 동기화
+- **배치 동기화**: 정기적인 배치 작업으로 데이터 동기화
+
+#### 접근 제어 및 보안
+- **IAM 역할 분리**: Application과 Agent별 IAM 역할 분리
+- **VPC 엔드포인트**: 프라이빗 네트워크 연결
+- **암호화**: KMS를 통한 데이터 암호화 (저장 시, 전송 시)
+
+#### 참고 자료
+- [AWS RDS PostgreSQL Extensions - pgvector](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.Extensions.html#Appendix.PostgreSQL.CommonDBATasks.Extensions.pgvector)
+- [Amazon Bedrock Knowledge Bases](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html)
+- [Amazon OpenSearch Serverless](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html)
+
 ---
 
 ## 보안 및 거버넌스

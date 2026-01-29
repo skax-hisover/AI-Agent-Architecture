@@ -216,6 +216,73 @@ Azure의 AI Agent Architecture는 **Azure OpenAI Service**와 **Azure AI Studio*
 - **병렬 처리**: 독립적인 작업 병렬 실행
 - **비동기 처리**: 장시간 작업은 비동기로 처리
 
+### 8. Application ↔ Agent 공유 DB + Vector Store 구축
+
+#### 아키텍처 패턴
+
+**패턴 1: Azure PostgreSQL + pgvector 통합 패턴**
+- **구성**: Azure Database for PostgreSQL + pgvector Extension
+- **특징**:
+  - Application 데이터와 벡터 임베딩을 동일 DB에 저장
+  - 단일 데이터베이스에서 관계형 쿼리와 벡터 검색 지원
+  - 트랜잭션 일관성 보장
+- **적합한 경우**:
+  - 소규모~중규모 데이터
+  - 관계형 데이터와 벡터 데이터가 밀접하게 연관
+  - 운영 단순화가 우선
+- **구현 방법**:
+  - Azure Database for PostgreSQL Flexible Server 생성
+  - pgvector extension 활성화
+  - 벡터 컬럼 추가 및 인덱스 생성
+  - Application과 Agent가 동일 DB 접근
+
+**패턴 2: Azure AI Search + Cosmos DB 패턴**
+- **구성**: Azure AI Search (Vector Search) + Azure Cosmos DB
+- **특징**:
+  - Azure AI Search를 Vector Store로 사용
+  - Cosmos DB에 Application 데이터 및 세션 상태 저장
+  - 관리형 Vector Search 서비스
+- **적합한 경우**:
+  - 대규모 벡터 데이터
+  - 고성능 벡터 검색 필요
+  - 관리형 서비스 선호
+- **구현 방법**:
+  - Azure AI Search 인덱스 생성 (벡터 필드 포함)
+  - Cosmos DB 컨테이너 설계
+  - 데이터 동기화 파이프라인 구성
+  - Application과 Agent가 동일 리소스 공유
+
+**패턴 3: 하이브리드 패턴 (Cosmos DB + AI Search + Redis)**
+- **구성**:
+  - Cosmos DB: Application 데이터 및 세션 상태
+  - Azure AI Search: Vector Store 및 RAG 검색
+  - Azure Cache for Redis: 자주 사용되는 데이터 캐싱
+  - Azure Blob Storage: 원본 문서 저장
+- **특징**:
+  - 각 구성 요소별 최적화
+  - 독립적 스케일링
+  - 데이터 동기화 필요
+- **적합한 경우**:
+  - 대규모 데이터
+  - 고성능 벡터 검색 필요
+  - 각 구성 요소별 독립적 관리 필요
+
+#### 데이터 동기화 전략
+- **Azure Functions**: 이벤트 트리거 기반 동기화
+- **Logic Apps**: 워크플로우 기반 동기화
+- **Azure Data Factory**: 배치 및 실시간 동기화
+
+#### 접근 제어 및 보안
+- **Azure AD 인증**: 서비스 주체 기반 인증
+- **Private Endpoint**: 프라이빗 네트워크 연결
+- **Key Vault**: 시크릿 및 연결 문자열 관리
+- **암호화**: 전송 중 및 저장 시 암호화
+
+#### 참고 자료
+- [Azure Database for PostgreSQL - pgvector Extension](https://learn.microsoft.com/azure/postgresql/flexible-server/how-to-use-pgvector)
+- [Azure AI Search Vector Search](https://learn.microsoft.com/azure/search/vector-search-overview)
+- [Azure Cosmos DB + Azure AI Search 통합](https://learn.microsoft.com/azure/search/search-howto-index-cosmosdb)
+
 ---
 
 ## 보안 및 거버넌스

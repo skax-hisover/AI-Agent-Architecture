@@ -222,6 +222,99 @@ Coordinator Agent
 - **병렬 처리**: 독립적인 작업 병렬 실행
 - **비동기 처리**: 장시간 작업은 비동기로 처리
 
+### 8. Application ↔ Agent 공유 DB + Vector Store 구축
+
+#### 아키텍처 패턴
+
+**패턴 1: AlloyDB + pgvector 통합 패턴**
+- **구성**: AlloyDB for PostgreSQL + pgvector Extension
+- **특징**:
+  - PostgreSQL 호환 + pgvector 지원
+  - Application 데이터와 벡터 임베딩 통합 저장
+  - 고성능 벡터 검색 지원
+  - AWS RDS보다 향상된 성능
+- **적합한 경우**:
+  - 소규모~중규모 데이터
+  - 관계형 데이터와 벡터 데이터가 밀접하게 연관
+  - 고성능 벡터 검색 필요
+- **구현 방법**:
+  - AlloyDB 클러스터 생성
+  - pgvector extension 활성화
+  - 벡터 컬럼 추가 및 인덱스 생성
+  - Application과 Agent가 동일 DB 접근
+
+**패턴 2: Cloud SQL (PostgreSQL) + pgvector**
+- **구성**: Cloud SQL for PostgreSQL + pgvector Extension
+- **특징**:
+  - 관리형 PostgreSQL 서비스
+  - pgvector extension 지원
+  - 관계형 데이터와 벡터 검색 통합
+- **적합한 경우**:
+  - 표준 PostgreSQL 환경
+  - 관리형 서비스 선호
+  - 중소규모 데이터
+- **구현 방법**:
+  - Cloud SQL PostgreSQL 인스턴스 생성
+  - pgvector extension 활성화
+  - 벡터 컬럼 및 인덱스 구성
+
+**패턴 3: Vertex AI Search + Firestore 패턴**
+- **구성**: Vertex AI Search + Firestore
+- **특징**:
+  - Vertex AI Search를 관리형 Vector Store로 사용
+  - Firestore에 Application 데이터 및 세션 상태 저장
+  - 완전 관리형 서비스
+- **적합한 경우**:
+  - 대규모 벡터 데이터
+  - 관리형 Vector Store 선호
+  - NoSQL 데이터 모델 적합
+- **구현 방법**:
+  - Vertex AI Search 인덱스 생성
+  - Firestore 컬렉션 설계
+  - 데이터 동기화 파이프라인 구성
+  - Application과 Agent가 동일 리소스 공유
+
+**패턴 4: 하이브리드 패턴 (Cloud SQL + Vertex AI Search + Firestore)**
+- **구성**:
+  - Cloud SQL: Application 관계형 데이터
+  - Vertex AI Search: Vector Store 및 RAG 검색
+  - Firestore: 세션 상태 및 메타데이터
+  - Memorystore (Redis): 자주 사용되는 데이터 캐싱
+- **특징**:
+  - 각 구성 요소별 최적화
+  - 독립적 스케일링
+  - 데이터 동기화 필요
+- **적합한 경우**:
+  - 대규모 데이터
+  - 고성능 벡터 검색 필요
+  - 각 구성 요소별 독립적 관리 필요
+
+#### Vertex AI Agent Engine - Sessions & Memory Bank
+- **Sessions API**: 사용자-에이전트 간 개별 상호작용 저장하여 대화 컨텍스트 제공
+- **Memory Bank**: 세션에서 정보를 저장/검색하여 에이전트 상호작용 맞춤설정
+- **Example Store**: 퓨샷 예시를 저장하고 동적으로 검색
+- Application과 Agent가 Sessions 및 Memory Bank를 통해 데이터 공유
+
+#### 데이터 동기화 전략
+- **Cloud Functions**: 이벤트 트리거 기반 동기화
+- **Cloud Workflows**: 워크플로우 기반 동기화
+- **Dataflow**: 배치 및 스트리밍 동기화
+- **Pub/Sub**: 이벤트 기반 비동기 동기화
+
+#### 접근 제어 및 보안
+- **IAM 역할 분리**: Application과 Agent별 서비스 계정 분리
+- **VPC Service Controls**: 네트워크 경계 제어
+- **Private Service Connect**: 프라이빗 네트워크 연결
+- **Secret Manager**: 시크릿 및 연결 문자열 관리
+- **암호화**: CMEK를 통한 고객 관리형 키 암호화
+
+#### 참고 자료
+- [Vertex AI 및 벡터 검색을 사용하는 RAG 지원 생성형 AI 애플리케이션 인프라](https://cloud.google.com/architecture/gen-ai-rag-vertex-ai-vector-search)
+- [Cloud SQL을 사용한 생성형 AI RAG](https://cloud.google.com/architecture/ai-ml/generative-ai-rag)
+- [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb/docs)
+- [Vertex AI Search](https://cloud.google.com/vertex-ai/docs/vector-search/overview)
+- [Vertex AI Sessions Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/sessions)
+
 ---
 
 ## 보안 및 거버넌스
