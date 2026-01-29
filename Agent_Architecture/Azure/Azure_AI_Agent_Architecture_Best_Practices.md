@@ -340,6 +340,25 @@ Azure의 AI Agent Architecture는 **Azure OpenAI Service**와 **Azure AI Studio*
 - Log Analytics를 통한 로그 분석
 - 사용자 정의 차원 및 메트릭 추가
 
+#### End-to-End Tracing (Web → API → Agent → Tool/DB → LLM)
+- **추적 대상 경로**: 웹 클라이언트 → App Service/AKS(API) → Azure Functions/Container Apps(Agent Orchestrator) → Tool/DB(Cosmos DB, Azure SQL, Azure AI Search 등) → Azure OpenAI/Assistants(LLM)
+- **추적 구현 패턴**:
+  - **Trace Context 전파**: `traceparent`(W3C Trace Context)를 HTTP/gRPC 헤더로 전 구간에 전파
+  - **OpenTelemetry SDK 사용**: .NET/Java/Node.js 애플리케이션에 OpenTelemetry SDK를 적용하고 **Application Insights Exporter**를 통해 데이터 전송
+  - **Dependency 추적**: Azure Functions, Cosmos DB, Azure AI Search, Azure OpenAI 호출을 각각 Dependency Span으로 기록
+  - **엔드투엔드 상관관계**: Application Insights의 분산 추적(Distributed Tracing) 뷰에서 전체 호출 체인 확인
+- **권장 구조**:
+  1. **Web**: 프론트엔드에서 초기 Trace 생성 및 `traceparent` 헤더 설정
+  2. **API(App Service/AKS)**: Trace Context 수신 후 Azure Functions/Container Apps로 전달
+  3. **Agent Orchestrator**: 함수/컨테이너에서 Tool/DB/Azure OpenAI 호출 시 하위 Span 생성
+  4. **Tool/DB/LLM**: Cosmos DB/AI Search/OpenAI 호출을 Dependency Span으로 기록
+  5. **Application Insights 뷰**: Transaction Search 및 Application Map으로 서비스 간 관계 확인
+
+#### 참고 자료 (Tracing)
+- [Azure Monitor OpenTelemetry 통합 개요](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-overview)
+- [Application Insights 분산 추적](https://learn.microsoft.com/azure/azure-monitor/app/distributed-tracing)
+- [Azure Monitor OpenTelemetry 기반 자동 계측](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable)
+
 ### 2. 모니터링 지표
 
 #### 핵심 지표

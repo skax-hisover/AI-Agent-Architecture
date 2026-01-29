@@ -323,6 +323,25 @@ Coordinator Agent
 - X-Ray를 통한 분산 추적
 - OpenTelemetry를 통한 표준화된 관찰성
 
+#### End-to-End Tracing (Web → API → Agent → Tool/DB → LLM)
+- **추적 대상 경로**: 웹 클라이언트 → API Gateway/ALB → Application 서버/Agent Orchestrator(Lambda/ECS/EKS) → Tool/DB(DynamoDB, RDS, OpenSearch 등) → LLM/Bedrock Runtime
+- **추적 구현 패턴**:
+  - **Trace Context 전파**: `traceparent`(W3C Trace Context)를 HTTP/gRPC 헤더로 모든 호출 체인에 전파
+  - **OpenTelemetry SDK/ADOT 사용**: Web/API/Agent 서비스에 AWS Distro for OpenTelemetry(ADOT) SDK/Collector를 적용하여 Span 생성
+  - **AWS SDK 인스트루멘테이션**: DynamoDB, RDS, OpenSearch, Secrets Manager, Bedrock Runtime 호출을 각각 하위 Span으로 기록
+  - **Export 대상**: ADOT Collector에서 X-Ray/CloudWatch Logs/CloudWatch Metrics로 Export
+- **권장 구조**:
+  1. **Web**: 프론트엔드에서 초기 Trace 시작 및 `traceparent` 헤더 설정
+  2. **API**: API Gateway/ALB에서 Trace Context 수신 후 애플리케이션으로 전달
+  3. **Agent Orchestrator**: Lambda/ECS/EKS에서 Agent 로직 실행 및 Tool/DB/Bedrock 호출 시 하위 Span 생성
+  4. **Tool/DB/LLM**: AWS SDK 인스트루멘테이션으로 각 서비스 호출 추적
+  5. **X-Ray 뷰**: 전체 호출 체인을 Service Map/Trace 뷰로 시각화
+
+#### 참고 자료 (Tracing)
+- [AWS Distro for OpenTelemetry](https://aws-otel.github.io)
+- [AWS X-Ray와 OpenTelemetry 통합](https://docs.aws.amazon.com/xray/latest/devguide/otel-integration.html)
+- [AWS Prescriptive Guidance - Generative AI Agents 보안/감시](https://docs.aws.amazon.com/ko_kr/prescriptive-guidance/latest/security-reference-architecture/gen-ai-agents.html)
+
 ### 2. 모니터링 지표
 
 #### 핵심 지표

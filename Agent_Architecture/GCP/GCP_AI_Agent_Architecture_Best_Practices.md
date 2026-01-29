@@ -381,6 +381,24 @@ Coordinator Agent
 - 구조화된 로그 형식 사용
 - 사용자 정의 차원 및 메트릭 추가
 
+#### End-to-End Tracing (Web → API → Agent → Tool/DB → LLM)
+- **추적 대상 경로**: 웹 클라이언트 → Cloud Load Balancing/API Gateway → Cloud Run/GKE(API & Agent Orchestrator) → Cloud Functions/Workflows/Pub/Sub/Firestore/Cloud SQL(Tool/DB) → Vertex AI/Agent Engine(LLM/Agent Runtime)
+- **추적 구현 패턴**:
+  - **Trace Context 전파**: `traceparent`(W3C Trace Context)를 HTTP/gRPC 헤더로 모든 서비스에 전파
+  - **OpenTelemetry SDK/Collector 사용**: Cloud Run/GKE 애플리케이션에 OTel SDK를 적용하고, OTLP Exporter로 **Cloud Trace**에 Span 전송
+  - **외부 호출 추적**: Vertex AI/Agent Engine, Vertex AI Search, Cloud Functions 등의 호출을 External/Dependency Span으로 기록
+  - **Messaging 추적**: Pub/Sub, Workflows 등을 Messaging Span/Span Link로 연결해 비동기 경로 추적
+- **권장 구조**:
+  1. **Web**: 프론트엔드에서 초기 Trace 생성 및 `traceparent` 헤더 설정
+  2. **API(Cloud Run/GKE)**: Trace Context 수신 후 Agent 로직 실행 및 Tool/DB/Vertex AI 호출 시 하위 Span 생성
+  3. **Tool/DB/LLM**: Cloud SQL/Firestore/Vertex AI Search/Vertex AI 호출을 각기 별도 Span으로 기록
+  4. **Cloud Trace 뷰**: Flame Graph/Service Map에서 Web → API → Agent → Tool/DB → LLM 전체 체인 확인
+
+#### 참고 자료 (Tracing)
+- [Cloud Trace와 OpenTelemetry](https://cloud.google.com/trace/docs/setup#ot)
+- [Cloud Logging 및 Monitoring 개요](https://cloud.google.com/stackdriver)
+- [Vertex AI Agent Engine 개요](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/use-langgraph)
+
 ### 2. 모니터링 지표
 
 #### 핵심 지표
