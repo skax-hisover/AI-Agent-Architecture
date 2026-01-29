@@ -8,7 +8,8 @@
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
 7. [아키텍처 구성도](#아키텍처-구성도)
-8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+8. [Application ↔ Agent 통신 패턴](#application--agent-통신-패턴)
+9. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -450,6 +451,155 @@ sequenceDiagram
     Orch-->>API: 최종 응답
     API-->>User: 응답 반환
 ```
+
+---
+
+## Application ↔ Agent 통신 패턴
+
+### 1. 동기 호출 패턴 (Synchronous Invocation)
+
+#### InvokeAgent API
+- **용도**: 즉시 응답이 필요한 사용자 인터랙션, 짧은 처리 시간(< 5초) 작업
+- **특징**: 
+  - Streaming 응답 지원으로 실시간 피드백 제공
+  - 세션 ID 기반 상태 유지
+  - 단일 요청-응답 사이클
+- **사용 사례**:
+  - 채팅 인터페이스
+  - 간단한 질의응답
+  - 빠른 정보 검색
+
+#### 구현 예시
+```python
+# Bedrock Runtime API를 통한 동기 호출
+response = bedrock_runtime.invoke_agent(
+    agentId=agent_id,
+    agentAliasId=alias_id,
+    sessionId=session_id,
+    inputText=user_message
+)
+```
+
+#### 장점
+- 낮은 지연 시간
+- 실시간 사용자 피드백
+- 간단한 구현
+
+#### 단점
+- 타임아웃 제약 (일반적으로 30초 이내)
+- 장시간 작업에 부적합
+- 동시 요청 처리 제한
+
+### 2. 비동기 호출 패턴 (Asynchronous Invocation)
+
+#### EventBridge 기반 비동기 처리
+- **용도**: 장시간 실행 작업, 멀티스텝 워크플로우, 백그라운드 작업
+- **특징**:
+  - 이벤트 기반 아키텍처
+  - 확장 가능한 처리
+  - 작업 상태 추적 가능
+- **사용 사례**:
+  - 복잡한 분석 작업
+  - 리포트 생성
+  - 배치 처리
+  - 이메일 발송
+
+#### Step Functions를 통한 워크플로우 오케스트레이션
+- **용도**: 복잡한 멀티스텝 에이전트 작업
+- **특징**:
+  - 상태 머신 기반 워크플로우
+  - 에러 처리 및 재시도 자동화
+  - 각 단계별 상태 추적
+- **구성 요소**:
+  - Lambda 함수 (전처리, 후처리)
+  - Bedrock Agent 호출
+  - Action Group 실행
+  - 상태 저장 (DynamoDB)
+
+#### 구현 예시
+```python
+# EventBridge를 통한 비동기 작업 트리거
+eventbridge.put_events(
+    Entries=[{
+        'Source': 'application.agent',
+        'DetailType': 'AgentTask',
+        'Detail': json.dumps({
+            'agentId': agent_id,
+            'input': user_message,
+            'sessionId': session_id
+        })
+    }]
+)
+```
+
+#### 장점
+- 장시간 작업 처리 가능
+- 확장성 및 안정성
+- 복잡한 워크플로우 관리
+
+#### 단점
+- 구현 복잡도 증가
+- 상태 관리 필요
+- 실시간 피드백 어려움
+
+### 3. 하이브리드 패턴 (Hybrid Pattern)
+
+#### 동기 + 비동기 조합
+- **패턴**: 초기 응답은 동기로, 장시간 작업은 비동기로 처리
+- **구현**:
+  1. 사용자 요청 → 동기 호출로 즉시 응답 (예: "작업을 시작했습니다")
+  2. 실제 작업 → EventBridge로 비동기 처리
+  3. 완료 시 → 사용자에게 알림 (SNS, WebSocket 등)
+
+#### 사용 사례
+- 문서 분석 및 요약
+- 복잡한 데이터 처리
+- 멀티 에이전트 협업 작업
+
+### 4. 통신 패턴 선택 기준
+
+#### 동기 호출이 적합한 경우
+- ✅ 즉시 응답이 필요한 사용자 인터랙션
+- ✅ 짧은 처리 시간 (< 5초)
+- ✅ 실시간 피드백이 중요한 UX
+- ✅ 단순한 질의응답
+
+#### 비동기 호출이 적합한 경우
+- ✅ 장시간 실행 작업 (분석, 리포트 생성)
+- ✅ 멀티스텝 워크플로우 (여러 Tool 호출 필요)
+- ✅ 백그라운드 작업 (이메일 발송, 데이터 처리)
+- ✅ 배치 처리 작업
+
+### 5. 세션 및 상태 관리
+
+#### 세션 ID 기반 상태 유지
+- **DynamoDB**: 세션 상태 저장
+- **세션 만료**: TTL 설정으로 자동 정리
+- **상태 동기화**: 동기/비동기 작업 간 상태 공유
+
+#### 구현 고려사항
+- 세션 키 설계 (사용자 ID + 세션 ID)
+- 상태 일관성 보장
+- 세션 복구 메커니즘
+
+### 6. 에러 처리 및 Fallback
+
+#### 동기 호출 에러 처리
+- 타임아웃 처리
+- 재시도 로직 (Exponential Backoff)
+- Fallback 응답 제공
+
+#### 비동기 호출 에러 처리
+- Dead Letter Queue (DLQ) 활용
+- Step Functions의 에러 핸들링
+- 사용자 알림 메커니즘
+
+### 7. 참고 자료
+
+- [Amazon Bedrock Agents API Reference](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html)
+- [AWS Event-Driven Architecture](https://aws.amazon.com/architecture/event-driven/)
+- [AWS Step Functions Best Practices](https://docs.aws.amazon.com/step-functions/latest/dg/best-practices.html)
+- [Amazon Bedrock Agents Developer Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
 
 ---
 

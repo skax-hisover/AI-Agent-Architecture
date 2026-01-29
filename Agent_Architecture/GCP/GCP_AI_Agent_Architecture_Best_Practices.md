@@ -8,7 +8,8 @@
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
 7. [아키텍처 구성도](#아키텍처-구성도)
-8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+8. [Application ↔ Agent 통신 패턴](#application--agent-통신-패턴)
+9. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -901,6 +902,230 @@ graph LR
     style CloudRun fill:#B3D9FF
     style VertexSearch fill:#B3D9FF
 ```
+
+---
+
+## Application ↔ Agent 통신 패턴
+
+### 1. 동기/비동기 혼합 패턴 (Hybrid Pattern)
+
+#### Vertex AI Agent Engine 기본 통신
+- **특징**: 
+  - 동기 호출과 비동기 워크플로우 모두 지원
+  - Agent Engine이 관리형 런타임으로 통신 처리
+  - Sessions API를 통한 세션 기반 상태 관리
+- **사용 사례**:
+  - 다양한 작업 유형 지원
+  - 유연한 통신 패턴 선택
+
+#### 구현 예시
+```python
+# Agent Engine을 통한 호출
+from google.cloud import aiplatform
+
+# Agent Engine 배포된 에이전트 호출
+agent = aiplatform.AgentEngine(agent_id=agent_id)
+response = agent.invoke(
+    session_id=session_id,
+    message=user_message
+)
+```
+
+### 2. 동기 호출 패턴 (Synchronous Invocation)
+
+#### 직접 API 호출
+- **용도**: 즉시 응답이 필요한 간단한 작업
+- **특징**:
+  - Vertex AI API 직접 호출
+  - 낮은 지연 시간
+  - Streaming 응답 지원
+- **사용 사례**:
+  - 간단한 질의응답
+  - 빠른 정보 검색
+  - 실시간 채팅
+
+#### 구현 예시
+```python
+# Vertex AI API 동기 호출
+from vertexai.generative_models import GenerativeModel
+
+model = GenerativeModel("gemini-pro")
+response = model.generate_content(
+    prompt=user_message,
+    stream=True  # Streaming 지원
+)
+```
+
+#### 장점
+- 낮은 지연 시간
+- 실시간 사용자 피드백
+- 간단한 구현
+
+#### 단점
+- 타임아웃 제약
+- 장시간 작업에 부적합
+
+### 3. 비동기 호출 패턴 (Asynchronous Invocation)
+
+#### Cloud Pub/Sub를 통한 비동기 메시징
+- **용도**: 장시간 실행 작업, 배치 처리, 이벤트 기반 아키텍처
+- **특징**:
+  - 메시지 큐 기반 통신
+  - 확장 가능한 처리
+  - 작업 상태 추적
+- **사용 사례**:
+  - 복잡한 분석 작업
+  - 리포트 생성
+  - 배치 처리
+  - 멀티 에이전트 협업
+
+#### 구현 예시
+```python
+# Pub/Sub를 통한 비동기 작업 트리거
+from google.cloud import pubsub_v1
+
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path(project_id, topic_name)
+
+message_data = json.dumps({
+    'agent_id': agent_id,
+    'session_id': session_id,
+    'user_message': user_message
+}).encode('utf-8')
+
+future = publisher.publish(topic_path, message_data)
+message_id = future.result()
+```
+
+#### Cloud Workflows를 통한 워크플로우 오케스트레이션
+- **용도**: 복잡한 멀티스텝 에이전트 작업
+- **특징**:
+  - YAML 기반 워크플로우 정의
+  - 에러 처리 및 재시도 자동화
+  - 각 단계별 상태 추적
+- **구성 요소**:
+  - HTTP 호출 (Agent Engine)
+  - Cloud Functions 실행
+  - 조건부 분기
+  - 상태 저장
+
+### 4. Agent-to-Agent (A2A) 프로토콜
+
+#### 표준화된 에이전트 간 통신
+- **용도**: 멀티 에이전트 협업, Coordinator 패턴
+- **특징**:
+  - 개방형 프로토콜 표준
+  - 에이전트 간 직접 통신
+  - 메시지 기반 통신
+- **사용 사례**:
+  - Coordinator Agent가 하위 Agent에게 작업 위임
+  - 여러 전문화된 Agent 협업
+  - 복잡한 워크플로우 처리
+
+#### 구현 예시
+```python
+# A2A 프로토콜을 통한 에이전트 간 통신
+coordinator_agent.send_message(
+    target_agent_id=search_agent_id,
+    message={
+        'task': 'search',
+        'query': user_query,
+        'context': session_context
+    }
+)
+```
+
+### 5. Sessions 및 Memory Bank
+
+#### 세션 기반 상태 관리
+- **Sessions API**: 사용자-에이전트 상호작용을 세션 단위로 저장
+- **Memory Bank**: 단기 및 장기 메모리 관리
+- **특징**:
+  - 세션 ID 기반 컨텍스트 유지
+  - 비동기 작업 시에도 컨텍스트 보존
+  - 메모리 검색 및 활용
+
+#### 구현 예시
+```python
+# Sessions API를 통한 세션 관리
+from google.cloud import aiplatform
+
+# 세션 생성
+session = aiplatform.Session.create(
+    agent_id=agent_id,
+    user_id=user_id
+)
+
+# 세션에 메시지 추가
+session.add_message(
+    role='user',
+    content=user_message
+)
+
+# 에이전트 응답
+response = session.invoke()
+```
+
+### 6. 통신 패턴 선택 기준
+
+#### 동기 호출이 적합한 경우
+- ✅ 즉시 응답이 필요한 사용자 인터랙션
+- ✅ 짧은 처리 시간 (< 5초)
+- ✅ 실시간 피드백이 중요한 UX
+- ✅ 단순한 질의응답
+
+#### 비동기 호출이 적합한 경우
+- ✅ 장시간 실행 작업 (분석, 리포트 생성)
+- ✅ 멀티스텝 워크플로우 (여러 Tool 호출 필요)
+- ✅ 백그라운드 작업 (이메일 발송, 데이터 처리)
+- ✅ 배치 처리 작업
+
+#### A2A 프로토콜이 적합한 경우
+- ✅ 멀티 에이전트 협업
+- ✅ Coordinator 패턴 구현
+- ✅ 복잡한 워크플로우 분산 처리
+
+### 7. ReAct, CoT, ToT 패턴과 통신 방식
+
+#### ReAct (Reasoning + Acting)
+- **통신 방식**: 주로 동기 호출
+- **특징**: 판단과 실행을 연속적으로 수행
+- **예시**: "받은 이메일 → 미팅 요청 감지 → 캘린더 자동 등록"
+
+#### Chain of Thought (CoT)
+- **통신 방식**: 동기 또는 비동기 (작업 복잡도에 따라)
+- **특징**: 단계적 사고 전개
+- **예시**: "출장 준비 → 항공권 검색 → 숙소 비교 → 일정 조정"
+
+#### Tree of Thought (ToT)
+- **통신 방식**: 비동기 처리 권장
+- **특징**: 병렬 아이디어 탐색 후 결정
+- **예시**: "여러 옵션 병렬 탐색 → 최적 선택"
+
+### 8. 에러 처리 및 재시도
+
+#### 동기 호출 에러 처리
+- 타임아웃 처리
+- 재시도 로직 (Exponential Backoff)
+- Fallback 응답 제공
+
+#### 비동기 호출 에러 처리
+- Pub/Sub Dead Letter Topic 활용
+- Cloud Workflows의 에러 핸들링
+- 사용자 알림 메커니즘 (Cloud Functions, Cloud Tasks)
+
+#### A2A 통신 에러 처리
+- 메시지 전달 실패 시 재시도
+- 에이전트 간 타임아웃 처리
+- Fallback 에이전트 지정
+
+### 9. 참고 자료
+
+- [Vertex AI Agent Engine 배포 가이드](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/deploy)
+- [Vertex AI Sessions API](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/sessions)
+- [Cloud Pub/Sub Documentation](https://cloud.google.com/pubsub/docs)
+- [Cloud Workflows Documentation](https://cloud.google.com/workflows/docs)
+- [Agentic AI 디자인 패턴 선택 가이드](https://cloud.google.com/architecture/choose-agentic-ai-architecture-design-pattern)
 
 ---
 

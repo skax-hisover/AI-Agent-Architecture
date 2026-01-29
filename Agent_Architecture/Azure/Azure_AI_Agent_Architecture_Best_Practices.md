@@ -8,7 +8,8 @@
 5. [보안 및 거버넌스](#보안-및-거버넌스)
 6. [운영 및 모니터링](#운영-및-모니터링)
 7. [아키텍처 구성도](#아키텍처-구성도)
-8. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
+8. [Application ↔ Agent 통신 패턴](#application--agent-통신-패턴)
+9. [참고 아키텍처 패턴](#참고-아키텍처-패턴)
 
 ---
 
@@ -467,6 +468,228 @@ sequenceDiagram
     Assistants-->>APIM: 응답 생성
     APIM-->>User: 응답 반환
 ```
+
+---
+
+## Application ↔ Agent 통신 패턴
+
+### 1. 비동기 호출 패턴 (Asynchronous Invocation) - 기본 패턴
+
+#### Assistants API Run Polling 패턴
+- **용도**: Azure OpenAI Assistants API의 기본 통신 방식
+- **특징**:
+  - Run 생성 → 비동기 실행 → Polling으로 상태 확인
+  - 장시간 작업 처리 가능
+  - Thread 기반 대화 컨텍스트 관리
+- **사용 사례**:
+  - 복잡한 멀티스텝 작업
+  - 함수 호출이 필요한 작업
+  - 장시간 실행 작업
+
+#### 구현 예시
+```python
+# Assistants API 비동기 실행
+# 1. Run 생성
+run = client.beta.threads.runs.create(
+    thread_id=thread_id,
+    assistant_id=assistant_id,
+    instructions=user_message
+)
+
+# 2. Polling으로 완료 대기
+while run.status in ['queued', 'in_progress']:
+    time.sleep(1)
+    run = client.beta.threads.runs.retrieve(
+        thread_id=thread_id,
+        run_id=run.id
+    )
+
+# 3. 결과 확인
+if run.status == 'completed':
+    messages = client.beta.threads.messages.list(thread_id=thread_id)
+```
+
+#### 장점
+- 장시간 작업 처리 가능
+- 복잡한 워크플로우 지원
+- Thread 기반 상태 관리
+
+#### 단점
+- Polling 오버헤드
+- 실시간 피드백 어려움
+- 구현 복잡도 증가
+
+### 2. 동기 호출 패턴 (Synchronous Invocation)
+
+#### Chat Completions API 직접 호출
+- **용도**: 즉시 응답이 필요한 간단한 작업
+- **특징**:
+  - 단일 요청-응답 사이클
+  - 낮은 지연 시간
+  - Streaming 응답 지원
+- **사용 사례**:
+  - 간단한 질의응답
+  - 빠른 정보 검색
+  - 실시간 채팅
+
+#### 구현 예시
+```python
+# Chat Completions API 동기 호출
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message}
+    ],
+    functions=function_definitions,
+    stream=True  # Streaming 지원
+)
+```
+
+#### 장점
+- 낮은 지연 시간
+- 실시간 사용자 피드백
+- 간단한 구현
+
+#### 단점
+- 타임아웃 제약
+- 장시간 작업에 부적합
+- 복잡한 워크플로우 처리 어려움
+
+### 3. Function Calling 통신 패턴
+
+#### Azure Functions를 통한 도구 실행
+- **용도**: 에이전트가 외부 시스템과 통신하는 방식
+- **특징**:
+  - HTTP 트리거 함수
+  - OpenAPI 스펙 기반 함수 정의
+  - 비동기 실행 가능
+- **구성 요소**:
+  - 함수 정의 (OpenAPI 스펙)
+  - Azure Functions 실행
+  - 결과 반환 및 처리
+
+#### 구현 예시
+```python
+# Function 정의
+functions = [
+    {
+        "name": "get_weather",
+        "description": "Get current weather",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            }
+        }
+    }
+]
+
+# Function 호출 처리
+if response.choices[0].message.function_call:
+    function_name = response.choices[0].message.function_call.name
+    function_args = json.loads(response.choices[0].message.function_call.arguments)
+    
+    # Azure Functions 호출
+    result = call_azure_function(function_name, function_args)
+```
+
+### 4. Service Bus를 통한 비동기 메시징
+
+#### 이벤트 기반 아키텍처
+- **용도**: 완전 비동기 처리, 이벤트 기반 통신
+- **특징**:
+  - 메시지 큐 기반 통신
+  - 확장 가능한 처리
+  - 작업 상태 추적
+- **사용 사례**:
+  - 배치 처리
+  - 이벤트 기반 워크플로우
+  - 마이크로서비스 간 통신
+
+#### 구현 예시
+```python
+# Service Bus 메시지 전송
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+servicebus_client = ServiceBusClient.from_connection_string(conn_str)
+sender = servicebus_client.get_queue_sender(queue_name)
+
+message = ServiceBusMessage(json.dumps({
+    'assistant_id': assistant_id,
+    'thread_id': thread_id,
+    'user_message': user_message
+}))
+
+sender.send_messages(message)
+```
+
+### 5. Logic Apps를 통한 워크플로우 오케스트레이션
+
+#### 시각적 워크플로우 설계
+- **용도**: 복잡한 멀티스텝 에이전트 작업
+- **특징**:
+  - 시각적 워크플로우 디자이너
+  - 다양한 커넥터 지원
+  - 에러 처리 및 재시도 자동화
+- **구성 요소**:
+  - HTTP 트리거
+  - Azure OpenAI 호출
+  - Azure Functions 실행
+  - 조건부 분기
+  - 상태 저장
+
+### 6. 통신 패턴 선택 기준
+
+#### 동기 호출이 적합한 경우
+- ✅ 즉시 응답이 필요한 사용자 인터랙션
+- ✅ 짧은 처리 시간 (< 5초)
+- ✅ 실시간 피드백이 중요한 UX
+- ✅ 단순한 질의응답
+
+#### 비동기 호출 (Assistants API)이 적합한 경우
+- ✅ 장시간 실행 작업
+- ✅ 멀티스텝 워크플로우
+- ✅ 함수 호출이 필요한 작업
+- ✅ Thread 기반 대화 컨텍스트 관리
+
+#### Service Bus 비동기 메시징이 적합한 경우
+- ✅ 완전 비동기 처리
+- ✅ 배치 작업
+- ✅ 이벤트 기반 아키텍처
+- ✅ 마이크로서비스 간 통신
+
+### 7. Thread 및 상태 관리
+
+#### Thread 기반 대화 관리
+- **Cosmos DB**: Thread 상태 저장
+- **Redis Cache**: 자주 사용되는 데이터 캐싱
+- **상태 동기화**: 동기/비동기 작업 간 상태 공유
+
+#### 구현 고려사항
+- Thread ID 설계 (사용자 ID + 세션 ID)
+- 상태 일관성 보장
+- Thread 복구 메커니즘
+- TTL 설정으로 자동 정리
+
+### 8. 에러 처리 및 재시도
+
+#### Assistants API 에러 처리
+- Run 상태 모니터링
+- 실패 시 재시도 로직
+- Dead Letter Queue 활용
+
+#### Function Calling 에러 처리
+- Azure Functions 재시도 정책
+- Circuit Breaker 패턴
+- Fallback 응답 제공
+
+### 9. 참고 자료
+
+- [Azure OpenAI Assistants API Documentation](https://learn.microsoft.com/azure/ai-services/openai/how-to/assistant)
+- [Azure Functions Best Practices](https://learn.microsoft.com/azure/azure-functions/functions-best-practices)
+- [Azure Service Bus Documentation](https://learn.microsoft.com/azure/service-bus-messaging/)
+- [Azure Logic Apps Documentation](https://learn.microsoft.com/azure/logic-apps/)
 
 ---
 
