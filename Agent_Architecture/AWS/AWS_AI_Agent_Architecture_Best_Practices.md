@@ -359,6 +359,63 @@ Coordinator Agent
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
 
+### 5. LLMOps / AgentOps 파이프라인
+
+#### 파이프라인 구성 요소
+
+**1. 개발 (Development)**
+- **프롬프트 개발**: Bedrock Console 또는 API를 통한 프롬프트 템플릿 개발
+- **Agent 정의**: Action Groups, Knowledge Base 설정
+- **로컬 테스트**: Bedrock Runtime API를 통한 로컬 테스트
+
+**2. 버전 관리 (Versioning)**
+- **Agent 버전 관리**: Bedrock Agent 버전 관리 기능 활용
+- **프롬프트 템플릿 버전 관리**: Git을 통한 프롬프트 템플릿 버전 관리
+- **Knowledge Base 버전 관리**: S3 데이터 소스 버전 관리
+
+**3. 평가 (Evaluation)**
+- **자동화된 평가**: Lambda 함수를 통한 평가 파이프라인
+- **평가 지표**: Hallucination, Policy Violation, 사용자 만족도
+- **A/B 테스트**: 여러 Agent 버전 비교 테스트
+
+**4. CI/CD 파이프라인**
+- **CodePipeline / CodeBuild**: Agent 배포 자동화
+- **테스트 단계**: 단위 테스트, 통합 테스트, 평가 테스트
+- **배포 단계**: 스테이징 → 프로덕션 배포
+- **롤백 메커니즘**: 자동 롤백 및 알림
+
+**5. 모니터링 및 추적**
+- **CloudWatch**: Latency, Token Usage, Cost 모니터링
+- **X-Ray**: Request ID, Agent Thought Chain ID, Tool Invocation ID 추적
+- **CloudWatch Logs**: 프롬프트, 응답, 도구 호출 로깅
+
+#### 파이프라인 워크플로우
+```
+Source Code (Git)
+    ↓
+CodeBuild (Build & Test)
+    ├── Unit Tests
+    ├── Integration Tests
+    └── Evaluation Tests
+    ↓
+Artifact Storage (S3)
+    ↓
+CodeDeploy (Deployment)
+    ├── Staging Environment
+    └── Production Environment
+    ↓
+CloudWatch (Monitoring)
+    ├── Latency Tracking
+    ├── Cost Monitoring
+    └── Error Tracking
+```
+
+#### 참고 자료
+- [Amazon Bedrock Agents Developer Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
+- [AWS CodePipeline Documentation](https://docs.aws.amazon.com/codepipeline/)
+- [AWS SageMaker MLOps Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html)
+- [AWS 생성형 AI 에이전트 보안 아키텍처](https://docs.aws.amazon.com/ko_kr/prescriptive-guidance/latest/security-reference-architecture/gen-ai-agents.html)
+
 ---
 
 ## 아키텍처 구성도

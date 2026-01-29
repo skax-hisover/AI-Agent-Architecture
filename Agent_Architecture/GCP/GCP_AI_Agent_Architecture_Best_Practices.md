@@ -416,6 +416,81 @@ Coordinator Agent
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
 
+### 5. LLMOps / AgentOps 파이프라인
+
+#### 파이프라인 구성 요소
+
+**1. 개발 (Development)**
+- **Vertex AI Agent Engine**: 관리형 런타임으로 빠른 개발 시작
+- **Agent Development Kit (ADK)**: 로컬 개발에서 Agent Engine으로 확장
+- **LangGraph / LangChain**: 다양한 Python 프레임워크 지원
+- **로컬 테스트**: Vertex AI SDK를 통한 로컬 테스트
+
+**2. 버전 관리 (Versioning)**
+- **Git**: Agent 코드, 프롬프트 템플릿 버전 관리
+- **Agent Engine 버전 관리**: Agent Engine API를 통한 버전 관리
+- **Artifact Registry**: 컨테이너 이미지 버전 관리
+- **Vertex AI Model Registry**: 모델 버전 관리
+
+**3. 평가 (Evaluation)**
+- **Gen AI Evaluation Service**: 자동화된 평가 파이프라인
+- **Example Store**: 퓨샷 예시 저장 및 동적 검색
+- **평가 지표**: Hallucination, Policy Violation, 사용자 만족도
+- **A/B 테스트**: 여러 Agent 버전 비교 테스트
+
+**4. CI/CD 파이프라인**
+- **Cloud Build**: 완전 자동화된 CI/CD 파이프라인
+- **테스트 단계**: 단위 테스트, 통합 테스트, 평가 테스트
+- **배포 단계**: Development → Staging → Production 배포
+- **Agent Engine 배포**: Agent Engine API를 통한 배포 자동화
+- **롤백 메커니즘**: 자동 롤백 및 알림
+
+**5. 모니터링 및 추적**
+- **Cloud Monitoring**: Latency, Token Usage, Cost 모니터링
+- **Cloud Trace**: Request ID, Agent Thought Chain ID, Tool Invocation ID 추적
+- **Cloud Logging**: 프롬프트, 응답, 도구 호출 로깅
+- **Prometheus 메트릭**: 커스텀 메트릭 수집
+
+#### Agentverse - AgentOps 프레임워크
+- **Cloud Build**: AI 에이전트 및 자체호스팅 LLM 제작/보안/배포 자동화
+- **GPU 가속 LLM 서빙**: Ollama, vLLM 등 LLM 서빙 프레임워크 컨테이너화
+- **Model Armor**: 보안 게이트웨이로 악성 프롬프트 차단
+- **Prometheus + Cloud Trace**: 전체 요청 수명주기 추적 및 성능 분석
+
+#### 파이프라인 워크플로우
+```
+Source Code (Git / Cloud Source Repositories)
+    ↓
+Cloud Build (CI/CD)
+    ├── Build
+    │   ├── Unit Tests
+    │   ├── Integration Tests
+    │   └── Evaluation Tests (Gen AI Evaluation Service)
+    ↓
+Artifact Registry (Container Images)
+    ↓
+Deployment
+    ├── Development Environment
+    ├── Staging Environment
+    └── Production Environment
+        ├── Agent Engine
+        ├── Cloud Run
+        └── GKE
+    ↓
+Cloud Monitoring & Logging
+    ├── Latency Tracking
+    ├── Cost Monitoring
+    ├── Error Tracking
+    └── Trace Analysis
+```
+
+#### 참고 자료
+- [Vertex AI Agent Engine 개요](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/use-langgraph)
+- [Vertex AI Agent Engine 배포 가이드](https://cloud.google.com/vertex-ai/generative-ai/docs/reasoning-engine/deploy)
+- [Agentverse - The Guardian's Bastion Codelab](https://codelabs.developers.google.com/agentverse-devopssre/instructions)
+- [Cloud Build Documentation](https://cloud.google.com/build/docs)
+- [Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines)
+
 ---
 
 ## 아키텍처 구성도

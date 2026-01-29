@@ -377,6 +377,68 @@ Azure의 AI Agent Architecture는 **Azure OpenAI Service**와 **Azure AI Studio*
 - **재현성**: 동일한 환경 재현 가능
 - **버전 관리**: 인프라 변경 사항 추적
 
+### 5. LLMOps / AgentOps 파이프라인
+
+#### 파이프라인 구성 요소
+
+**1. 개발 (Development)**
+- **Azure AI Studio**: 프롬프트 개발 및 테스트 환경
+- **Prompt Flow**: 프롬프트 워크플로우 개발 및 테스트
+- **Assistants API**: 에이전트 정의 및 함수 설정
+- **로컬 테스트**: Azure OpenAI SDK를 통한 로컬 테스트
+
+**2. 버전 관리 (Versioning)**
+- **Git**: 프롬프트 템플릿 및 Agent 정의 버전 관리
+- **Azure ML Model Registry**: 모델 버전 관리
+- **Azure DevOps**: 코드 및 설정 버전 관리
+
+**3. 평가 (Evaluation)**
+- **Prompt Flow Evaluation**: 자동화된 평가 파이프라인
+- **평가 지표**: Hallucination, Policy Violation, 사용자 만족도
+- **A/B 테스트**: 여러 프롬프트/모델 버전 비교 테스트
+
+**4. CI/CD 파이프라인**
+- **Azure DevOps / GitHub Actions**: Agent 배포 자동화
+- **Azure ML Pipelines**: ML 워크플로우 오케스트레이션
+- **테스트 단계**: 단위 테스트, 통합 테스트, 평가 테스트
+- **배포 단계**: 스테이징 → 프로덕션 배포
+- **롤백 메커니즘**: 자동 롤백 및 알림
+
+**5. 모니터링 및 추적**
+- **Application Insights**: Latency, Token Usage, Cost 모니터링
+- **Log Analytics**: Request ID, Agent Thought Chain ID, Tool Invocation ID 추적
+- **Azure Monitor**: 프롬프트, 응답, 함수 호출 로깅
+
+#### 파이프라인 워크플로우
+```
+Source Code (Git / Azure Repos)
+    ↓
+Azure Pipelines / GitHub Actions
+    ├── Build & Test
+    │   ├── Unit Tests
+    │   ├── Integration Tests
+    │   └── Evaluation Tests (Prompt Flow)
+    ↓
+Azure ML Pipelines
+    ├── Model Training (Optional)
+    └── Model Registration
+    ↓
+Deployment
+    ├── Staging Environment
+    └── Production Environment
+    ↓
+Application Insights (Monitoring)
+    ├── Latency Tracking
+    ├── Cost Monitoring
+    └── Error Tracking
+```
+
+#### 참고 자료
+- [Azure AI Studio Documentation](https://learn.microsoft.com/azure/ai-studio/)
+- [Azure Prompt Flow](https://learn.microsoft.com/azure/ai-studio/prompt-flow/overview-what-is-prompt-flow)
+- [Azure ML MLOps Guide](https://learn.microsoft.com/azure/machine-learning/concept-model-management-and-deployment)
+- [Azure DevOps Pipelines](https://learn.microsoft.com/azure/devops/pipelines/)
+
 ---
 
 ## 아키텍처 구성도
